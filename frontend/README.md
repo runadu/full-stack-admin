@@ -1,4 +1,4 @@
-# AI 股市會員系統 - Frontend
+# 會員系統 - Frontend
 
 Vue 3 + TypeScript + Vite
 
@@ -170,7 +170,7 @@ server: {
 - Route Guard 保護
 - 呼叫 `GET /api/v1/accounts/me`（需驗證）
 - 顯示使用者 Email
-- 顯示固定文字：「歡迎使用 AI 股市會員系統」
+- 顯示固定文字：「歡迎使用 會員系統」
 
 ### 登出
 

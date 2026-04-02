@@ -1,4 +1,4 @@
-# AI 股市會員系統 - Backend
+# 會員系統 - Backend
 
 FastAPI + SQL Server 後端服務
 

@@ -1,4 +1,4 @@
-# AI 股市會員系統 - Full-Stack 專案
+# 會員系統 - Full-Stack 專案
 
 FastAPI + SQL Server + Vue 3
 
@@ -232,7 +232,7 @@ DATABASE_URL=mssql+pyodbc://sa:password@localhost:14330/devdb?driver=ODBC+Driver
 
 ``` env
 VITE_API_BASE_URL=http://localhost:8000
-VITE_APP_NAME=股市會員系統
+VITE_APP_NAME=會員系統
 ```
 
 ------------------------------------------------------------------------

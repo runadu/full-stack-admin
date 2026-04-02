@@ -83,10 +83,10 @@ function statusBadgeVariant(status: RunStatus) {
           <div class="space-y-2">
             <p class="text-muted-foreground">
               <template v-if="email">
-                {{ email }}<br/>歡迎使用 AI 股市會員系統
+                {{ email }}<br/>歡迎使用 會員系統
               </template>
               <template v-else>
-                歡迎使用 AI 股市會員系統
+                歡迎使用 會員系統
               </template>
             </p>
           </div>

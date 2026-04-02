@@ -152,7 +152,7 @@ async function onSubmit() {
           <h2 class="text-3xl font-bold tracking-tight text-foreground">
             建立帳號
           </h2>
-          <p class="text-muted-foreground">加入量化交易會員系統</p>
+          <p class="text-muted-foreground">加入會員系統</p>
         </div>
 
         <el-form

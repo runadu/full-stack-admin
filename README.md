@@ -153,6 +153,11 @@ poetry install
 poetry run uvicorn src.main:app --reload
 ```
 
+補充：
+
+- Poetry 會使用 `backend/.venv` 作為本機虛擬環境
+- 若你使用 VS Code，請確認 interpreter 指到 `backend/.venv/bin/python`
+
 ### 4. 本機啟動前端
 
 ```bash
@@ -217,16 +222,32 @@ make be         # 本機啟動後端
 make fe         # 本機啟動前端
 ```
 
+前端格式化：
+
+```bash
+cd frontend
+npm run format
+npm run format:check
+```
+
 ## API 一覽
 
 所有受保護 API 都使用 `Authorization: Bearer <token>`。
 
-| Method | Path | 說明 |
-| --- | --- | --- |
-| `POST` | `/api/v1/accounts/register` | 建立帳號 |
-| `POST` | `/api/v1/accounts/login` | 取得 JWT token |
-| `GET` | `/api/v1/accounts/me` | 取得目前登入者 |
-| `GET` | `/api/v1/stocks` | 取得股票清單 |
+| Method | Path                        | 說明           |
+| ------ | --------------------------- | -------------- |
+| `POST` | `/api/v1/accounts/register` | 建立帳號       |
+| `POST` | `/api/v1/accounts/login`    | 取得 JWT token |
+| `GET`  | `/api/v1/accounts/me`       | 取得目前登入者 |
+| `GET`  | `/api/v1/stocks`            | 取得股票清單   |
+
+`GET /api/v1/stocks` 目前會回傳：
+
+- 基本資訊：`symbol`、`name`、`currency`
+- 市場資料：`open_price`、`high_price`、`low_price`、`close_price`
+- 交易統計：`volume`、`vwap_price`、`trade_count`
+- 衍生欄位：`day_change`、`day_change_percent`
+- 系統欄位：`price_date`、`source`、`data_delay`、`cache_status`、`fetched_at`、`warning`
 
 ## 實作備註
 

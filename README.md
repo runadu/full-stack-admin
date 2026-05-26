@@ -60,10 +60,11 @@ full-stack/
 - 前端登入 / 註冊表單驗證
 - 全域 401 處理
 - Dashboard 與 Stocks 路由保護
+- Dashboard 與 Stocks 頁面串接 Massive（Polygon）股票資料
 
 ### 目前範圍
 
-- `stocks` API 目前回傳示範資料，不是即時行情
+- `stocks` API 目前透過 Massive（Polygon）daily aggregates 取得資料
 - `development` 環境下，後端啟動時會自動建立資料表
 - 尚未導入 migration、refresh token、完整測試
 
@@ -175,6 +176,11 @@ ENV=development
 JWT_SECRET=ChangeMe_To_A_Long_Random_String_At_Least_32_Chars
 JWT_ALGORITHM=HS256
 JWT_EXPIRE_MINUTES=60
+MASSIVE_API_KEY=your_massive_api_key
+MASSIVE_STOCK_TICKERS=AAPL,MSFT,NVDA,TSLA,AMZN,GOOGL
+MASSIVE_TIMEOUT_SECONDS=10
+STOCKS_CACHE_TTL_SECONDS=60
+STOCKS_CACHE_STALE_IF_ERROR_SECONDS=900
 
 DATABASE_URL=mssql+pyodbc://sa:ChangeMe123%21@sqlserver:1433/devdb?driver=ODBC+Driver+18+for+SQL+Server&Encrypt=yes&TrustServerCertificate=yes
 ```
@@ -185,6 +191,11 @@ DATABASE_URL=mssql+pyodbc://sa:ChangeMe123%21@sqlserver:1433/devdb?driver=ODBC+D
 - Docker 模式下 `DATABASE_URL` host 應為 `sqlserver`
 - 本機啟動後端時 `DATABASE_URL` host 應改為 `localhost`
 - 更改 SQL Server SA 密碼後，通常需要重新建立 volume 才會生效
+- `MASSIVE_API_KEY` 需到 [Massive](https://massive.com/) 申請
+- `MASSIVE_STOCK_TICKERS` 是 Stocks 頁面要顯示的 ticker 清單，使用逗號分隔
+- Massive `Stocks Basic` 可用 aggregates / end-of-day 資料；若要 snapshot 或更接近即時的資料，需升級方案
+- `STOCKS_CACHE_TTL_SECONDS` 控制正常快取秒數
+- `STOCKS_CACHE_STALE_IF_ERROR_SECONDS` 控制上游失敗時可接受的陳舊快取秒數
 
 ### `frontend/.env`
 
@@ -222,14 +233,17 @@ make fe         # 本機啟動前端
 - 後端採用 `routes -> service -> repository` 分層
 - `Base.metadata.create_all()` 僅適合開發階段，不等同 migration
 - 前端 token 目前儲存在 `localStorage`，以 demo 完整流程為主
-- Dashboard 內的 KPI 和回測列表為展示資料
+- Dashboard 與 Stocks 頁面皆使用 Massive（原 Polygon）API 的股票資料
+- Stocks 清單資料由 Massive（原 Polygon）API 提供，目前顯示最近可用交易日的 OHLC、成交量、VWAP 與日內漲跌
+- Stocks API 會在 Swagger / JSON 中回傳 `cache_status`、`fetched_at`、`warning`，用來觀察快取命中、stale fallback 與部分 ticker 失敗
+- 若 Massive 暫時失敗，後端會優先回最後一次成功快取；若單一 ticker 的 reference data 失敗，會回退到 symbol / USD 預設值並保留 warning
 
 ## 後續可延伸
 
 - 導入 Alembic migration
 - 改為 HttpOnly cookie + refresh token
 - 補齊單元測試與整合測試
-- 以真實資料源取代示範股票資料
+- 擴充股票欄位，例如漲跌幅、成交量、更新時間
 
 ## 參考文件
 

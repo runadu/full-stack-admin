@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "format": "prettier --config ../.prettierrc.json --ignore-path ../.prettierignore --write . ../README.md ../docker-compose.yml",
+    "format:check": "prettier --config ../.prettierrc.json --ignore-path ../.prettierignore --check . ../README.md ../docker-compose.yml"
   },
   "dependencies": {
     "clsx": "^2.1.1",
@@ -21,6 +23,7 @@
     "@types/node": "^24.10.12",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/tsconfig": "^0.8.1",
+    "prettier": "^3.8.3",
     "tailwindcss": "^4.1.18",
     "typescript": "~5.9.3",
     "vite": "^7.3.1",

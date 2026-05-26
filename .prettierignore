@@ -1,0 +1,13 @@
+.git
+.DS_Store
+node_modules
+dist
+coverage
+.vite
+frontend/node_modules
+frontend/dist
+frontend/coverage
+frontend/tsconfig.app.tsbuildinfo
+backend/.venv
+backend/__pycache__
+backend/.pytest_cache

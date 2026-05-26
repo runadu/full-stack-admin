@@ -74,6 +74,55 @@ function openDetail(row: Stock) {
   selected.value = row;
   detailOpen.value = true;
 }
+
+function formatPrice(value: number, currency: string) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+function formatSignedPrice(value: number, currency: string) {
+  const formatted = formatPrice(Math.abs(value), currency);
+  if (value > 0) return `+${formatted}`;
+  if (value < 0) return `-${formatted}`;
+  return formatted;
+}
+
+function formatPercent(value: number) {
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${value.toFixed(2)}%`;
+}
+
+function formatVolume(value: number) {
+  return new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function formatRange(row: Stock) {
+  return `${formatPrice(row.low_price, row.currency)} - ${formatPrice(row.high_price, row.currency)}`;
+}
+
+function formatPriceDate(value: string) {
+  return new Intl.DateTimeFormat("zh-TW", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(`${value}T00:00:00`));
+}
+
+function formatDataDelay(value: string) {
+  if (value === "end_of_day") return "收盤資料";
+  return value;
+}
+
+function toneTextClass(value: number) {
+  if (value > 0) return "tone-good";
+  if (value < 0) return "tone-bad";
+  return "tone-neutral";
+}
 </script>
 
 <template>
@@ -95,33 +144,74 @@ function openDetail(row: Stock) {
     <div>
       <div v-if="!loading && !error && total === 0" class="py-10">
         <el-empty description="目前沒有股票資料">
-          <button class="btn btn-primary" type="button" @click="load">
-            重新載入
-          </button>
+          <button class="btn btn-primary" type="button" @click="load">重新載入</button>
         </el-empty>
       </div>
+      <div
+        v-if="!loading && !error && total > 0"
+        class="mb-4 rounded-xl border border-border/60 bg-surface/70 px-4 py-3 text-sm text-muted-foreground"
+      >
+        目前顯示的是最近可用交易日的日線資料，包含 OHLC、成交量、VWAP 與日內漲跌，不是盤中即時報價。
+      </div>
       <el-table
-        v-else
+        v-if="loading || error || total > 0"
         :data="tableData"
         v-loading="loading"
         class="app-table w-full"
         border
       >
-        <el-table-column prop="symbol" label="Symbol" min-width="160" />
-        <el-table-column prop="price" label="Price" width="140">
+        <el-table-column label="Stock" min-width="280" show-overflow-tooltip>
           <template #default="{ row }">
-            <span class="font-medium">{{ row.price }}</span>
+            <div class="min-w-0 space-y-1">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="font-semibold text-foreground shrink-0">{{ row.symbol }}</span>
+                <span class="text-sm text-muted-foreground truncate">{{ row.name }}</span>
+              </div>
+              <div class="text-xs text-muted-foreground">
+                {{ formatPriceDate(row.price_date) }} / {{ formatDataDelay(row.data_delay) }}
+              </div>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="close_price" label="Close" width="132">
+          <template #default="{ row }">
+            <span class="font-medium">
+              {{ formatPrice(row.close_price, row.currency) }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="Change" width="132">
+          <template #default="{ row }">
+            <div class="space-y-1">
+              <div class="font-medium" :class="toneTextClass(row.day_change)">
+                {{ formatSignedPrice(row.day_change, row.currency) }}
+              </div>
+              <div class="text-xs" :class="toneTextClass(row.day_change)">
+                {{ formatPercent(row.day_change_percent) }}
+              </div>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="H/L" width="144">
+          <template #default="{ row }">
+            <div class="space-y-1 text-sm">
+              <div>{{ formatPrice(row.high_price, row.currency) }}</div>
+              <div class="text-muted-foreground">
+                {{ formatPrice(row.low_price, row.currency) }}
+              </div>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="volume" label="Vol" width="120" align="right">
+          <template #default="{ row }">
+            <span>{{ formatVolume(row.volume) }}</span>
           </template>
         </el-table-column>
 
-        <el-table-column label="Action" width="220" align="right">
+        <el-table-column label="" width="88" align="right">
           <template #default="{ row }">
             <div class="flex justify-end gap-2">
-              <button
-                class="btn btn-outline btn-sm"
-                type="button"
-                @click="openDetail(row)"
-              >
+              <button class="btn btn-outline btn-sm" type="button" @click="openDetail(row)">
                 <ScanEye class="h-4 w-4" />
               </button>
             </div>
@@ -129,10 +219,7 @@ function openDetail(row: Stock) {
         </el-table-column>
       </el-table>
 
-      <div
-        v-if="total > 0"
-        class="mt-4 flex items-center justify-between gap-3 flex-wrap"
-      >
+      <div v-if="total > 0" class="mt-4 flex items-center justify-between gap-3 flex-wrap">
         <p class="text-sm text-muted-foreground">
           第
           <span class="text-foreground font-medium">{{ rangeText.from }}</span>
@@ -161,21 +248,94 @@ function openDetail(row: Stock) {
 
   <AppDialog
     v-model="detailOpen"
-    :title="selected?.symbol || 'Stock Detail'"
+    :title="selected?.name || selected?.symbol || 'Stock Detail'"
+    width="min(92vw, 720px)"
     :showFooter="false"
     cancelText="Close"
     @cancel="detailOpen = false"
   >
-    <div class="space-y-3">
-      <div class="flex items-center justify-between">
-        <span class="text-sm text-muted-foreground">Symbol</span>
-        <span class="font-medium text-foreground">{{ selected?.symbol }}</span>
+    <div class="grid gap-3 sm:grid-cols-2">
+      <div class="rounded-lg border border-border/70 bg-surface/70 p-3 min-w-0">
+        <div class="text-xs uppercase tracking-wide text-muted-foreground">Name</div>
+        <div class="mt-1 font-medium text-foreground break-words">{{ selected?.name }}</div>
       </div>
-      <div class="flex items-center justify-between">
-        <span class="text-sm text-muted-foreground">Price</span>
-        <span class="text-lg font-semibold text-foreground">
-          {{ selected?.price }}
-        </span>
+      <div class="rounded-lg border border-border/70 bg-surface/70 p-3">
+        <div class="text-xs uppercase tracking-wide text-muted-foreground">Symbol</div>
+        <div class="mt-1 font-medium text-foreground">{{ selected?.symbol }}</div>
+      </div>
+      <div class="rounded-lg border border-border/70 bg-surface/70 p-3">
+        <div class="text-xs uppercase tracking-wide text-muted-foreground">Close</div>
+        <div class="mt-1 text-lg font-semibold text-foreground">
+          {{ selected ? formatPrice(selected.close_price, selected.currency) : "" }}
+        </div>
+      </div>
+      <div class="rounded-lg border border-border/70 bg-surface/70 p-3">
+        <div class="text-xs uppercase tracking-wide text-muted-foreground">Day Change</div>
+        <div
+          class="mt-1 font-medium"
+          :class="selected ? toneTextClass(selected.day_change) : 'text-foreground'"
+        >
+          {{
+            selected
+              ? `${formatSignedPrice(selected.day_change, selected.currency)} (${formatPercent(selected.day_change_percent)})`
+              : ""
+          }}
+        </div>
+      </div>
+      <div class="rounded-lg border border-border/70 bg-surface/70 p-3">
+        <div class="text-xs uppercase tracking-wide text-muted-foreground">Open</div>
+        <div class="mt-1 font-medium text-foreground">
+          {{ selected ? formatPrice(selected.open_price, selected.currency) : "" }}
+        </div>
+      </div>
+      <div class="rounded-lg border border-border/70 bg-surface/70 p-3">
+        <div class="text-xs uppercase tracking-wide text-muted-foreground">High / Low</div>
+        <div class="mt-1 font-medium text-foreground break-words">
+          {{
+            selected
+              ? `${formatPrice(selected.high_price, selected.currency)} / ${formatPrice(selected.low_price, selected.currency)}`
+              : ""
+          }}
+        </div>
+      </div>
+      <div class="rounded-lg border border-border/70 bg-surface/70 p-3">
+        <div class="text-xs uppercase tracking-wide text-muted-foreground">Volume</div>
+        <div class="mt-1 font-medium text-foreground">
+          {{ selected ? formatVolume(selected.volume) : "" }}
+        </div>
+      </div>
+      <div class="rounded-lg border border-border/70 bg-surface/70 p-3">
+        <div class="text-xs uppercase tracking-wide text-muted-foreground">VWAP</div>
+        <div class="mt-1 font-medium text-foreground">
+          {{
+            selected && selected.vwap_price != null
+              ? formatPrice(selected.vwap_price, selected.currency)
+              : "N/A"
+          }}
+        </div>
+      </div>
+      <div class="rounded-lg border border-border/70 bg-surface/70 p-3">
+        <div class="text-xs uppercase tracking-wide text-muted-foreground">Trades</div>
+        <div class="mt-1 font-medium text-foreground">
+          {{ selected?.trade_count != null ? formatVolume(selected.trade_count) : "N/A" }}
+        </div>
+      </div>
+      <div class="rounded-lg border border-border/70 bg-surface/70 p-3">
+        <div class="text-xs uppercase tracking-wide text-muted-foreground">Date</div>
+        <div class="mt-1 font-medium text-foreground">
+          {{ selected ? formatPriceDate(selected.price_date) : "" }}
+        </div>
+      </div>
+      <div class="rounded-lg border border-border/70 bg-surface/70 p-3">
+        <div class="text-xs uppercase tracking-wide text-muted-foreground">Currency</div>
+        <div class="mt-1 font-medium text-foreground">{{ selected?.currency }}</div>
+      </div>
+      <div class="rounded-lg border border-border/70 bg-surface/70 p-3">
+        <div class="text-xs uppercase tracking-wide text-muted-foreground">Source / Delay</div>
+        <div class="mt-1 font-medium text-foreground break-words">
+          {{ selected?.source?.toUpperCase() }} /
+          {{ selected ? formatDataDelay(selected.data_delay) : "" }}
+        </div>
       </div>
     </div>
   </AppDialog>

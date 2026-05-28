@@ -4,6 +4,10 @@
 
 後端使用 FastAPI + SQL Server，前端使用 Vue 3 + Vite。專案提供 Docker 化的資料庫與 API，方便其他開發者直接在本機啟動和測試。
 
+## Demo
+
+[Watch Demo Video](https://www.youtube.com/watch?v=rHkOYng-cGI)
+
 ## 專案內容
 
 - 使用者註冊、登入、取得目前登入者資訊
